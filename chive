@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 
-TMP=/tmp/chive.tmp
-
 usage() {
   echo "usage: chive [-u user] [-i identity_file] [-h help] [-v verbose]" && exit 1
 }
 
 proc() {
-  if ping -W 1 -c 1 hive"$1".cs.berkeley.edu &>/dev/null; then
-    data=$(ssh -oStrictHostKeyChecking=no -oPasswordAuthentication=no -i "$2" "$USER"@hive"$1".cs.berkeley.edu "who|cut -f 1 -d ' '|sort -u|wc -l" 2>/dev/null)
+  if ping -W 1 -c 1 engapps"$1".ucmerced.edu &>/dev/null; then
+    data=$(ssh -oStrictHostKeyChecking=no -oPasswordAuthentication=no -i "$2" "$USER"@engapps"$1".ucmerced.edu "who|cut -f 1 -d ' '|sort -u|wc -l" 2>/dev/null)
     [ $? -eq 0 ] && printf "%02d  %02d\n" "$1" "$data"
   fi
 }
@@ -31,11 +29,10 @@ shift $((OPTIND-1))
 [ -z "$USER" ] && USER=$(whoami)
 [ -z "$ID" ] && ID=~/.ssh/id_rsa
 
-printf %d\\n $(seq 1 30) | xargs -n1 -P0 -I{} bash -c "proc {} $ID" | sort -k2 > $TMP
-smol=$(head -n1 $TMP | awk '{$1=$0+0;print $1}')
+smol=$(head -n1 <(printf %b\\n $(seq -w 1 10) | xargs -n1 -P0 -I{} bash -c "proc {} $ID" | sort -k2) | awk '{$1=$0+0;printf("%02d", $1)}')
 [ -z "$smol" ] && printf "Unable to connect to any hives! Check your username and identity file.\n" && exit
 [ $v ] && printf "HIVE    USERS\n" && sed -e 's/^/hive/' $TMP && printf "\nConnecting to hive%s...\n" "$smol"
 rm -rf $TMP
 
-ssh -i $ID "$USER"@hive"$smol".cs.berkeley.edu
+ssh -i $ID "$USER"@engapps"$smol".ucmerced.edu
 exit 0
